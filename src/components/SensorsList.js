@@ -6,7 +6,7 @@ const SensorsList = (props) => (<div>
   {props.sensors.map((sensor) => {
     return (<Sensor
       key={sensor.id}
-      {...sensor}
+      name={sensor.name}
       onPress={() => {
         props.onSensorPress(sensor.id);
       }}

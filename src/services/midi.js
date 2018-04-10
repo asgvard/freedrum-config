@@ -10,6 +10,7 @@
 
 import {findIndex, sortBy, reverse} from 'lodash';
 import {CONSTANTS} from '../constants';
+import {Sensor} from './sensor';
 
 /**
  * input and output example:
@@ -28,15 +29,8 @@ const availableInputs = [];
 const availableOutputs = [];
 
 /**
- * sensor example:
- * {
- *   id: "123456:789065", // concat of input/output IDs
- *   inputId: "123456",
- *   input: MIDIInput, // see example above
- *   outputId: "789065",
- *   output: MIDIOutput, // see example above
- *   name: "FD1 v7 Bluetooth"
- * }
+ * collection of Sensor instances
+ * See /services/sensor.js
  */
 const availableSensors = [];
 
@@ -107,14 +101,14 @@ const addSensorByIndex = (index) => {
   const newInput = availableInputs[index];
   const newOutput = availableOutputs[index];
 
-  const newSensor = {
-    id: `${newInput.id}:${newOutput.id}`,
-    inputId: newInput.id,
-    input: newInput,
-    outputId: newOutput.id,
-    output: newOutput,
-    name: newInput.name
-  };
+  const newSensor = new Sensor();
+
+  newSensor.id = `${newInput.id}:${newOutput.id}`;
+  newSensor.inputId = newInput.id;
+  newSensor.input = newInput;
+  newSensor.outputId = newOutput.id;
+  newSensor.output = newOutput;
+  newSensor.name = newInput.name;
 
   availableSensors.push(newSensor);
 
@@ -134,9 +128,11 @@ const addPort = (port) => {
   const correspondingCollection = port.type === CONSTANTS.MIDI_CONNECTION_TYPE_INPUT ?
     availableOutputs : availableInputs;
 
-  if (findExisting(port) === -1) {
-    collection.push(port);
+  if (findExisting(port) > -1) {
+    return;
   }
+
+  collection.push(port);
 
   const addedAtIndex = collection.length - 1;
 
@@ -154,6 +150,10 @@ const removePort = (port) => {
     availableOutputs : availableInputs;
 
   const existingIndex = findExisting(port);
+
+  if (existingIndex === -1) {
+    return;
+  }
 
   collection.splice(existingIndex, 1);
 
