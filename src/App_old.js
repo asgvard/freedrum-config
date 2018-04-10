@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
@@ -128,12 +130,12 @@ class Sensor {
   freedrumCommandCC=20
   factoryReset(){
     const factoryResetCmd=1;
-    
+
     this.writeCC(0,this.freedrumCommandCC,factoryResetCmd);
   }
 
   saveSettings(){
-    const saveCmd=0;    
+    const saveCmd=0;
     this.writeCC(0,this.freedrumCommandCC,saveCmd);
   }
 }
@@ -271,7 +273,7 @@ class App extends Component {
           <img src={logo} className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to Freedrum config</h1>
         </header>
-        
+
         <MidiDeviceList />
         <PresetList />
         <Board />
