@@ -6,14 +6,20 @@ class SettingsBoard extends Component {
     super(props);
 
     this.state = {
-      settingsLoaded: false
+      preset: null,
+      loading: false,
+      unsavedChanges: false,
+      loadError: null
     };
   }
 
   componentWillReceiveProps(newProps) {
     if (newProps.sensor && this.props.sensor !== newProps.sensor) {
       this.setState({
-        settingsLoaded: false
+        loading: true,
+        preset: null,
+        unsavedChanges: false,
+        loadError: null
       }, () => {
         this.loadSettings();
       });
@@ -21,12 +27,25 @@ class SettingsBoard extends Component {
   }
 
   async loadSettings() {
+    const stateUpdates = {
+      unsavedChanges: false,
+      loading: false
+    };
+
     try {
       const preset = await this.props.sensor.readPresetAsync();
 
-      console.log('preset is: ', preset);
+      this.setState({
+        ...stateUpdates,
+        preset,
+        loadError: null
+      });
     } catch (error) {
-      console.log('MIDI read error: ', error);
+      this.setState({
+        ...stateUpdates,
+        preset: null,
+        loadError: error.toString ? error.toString() : error
+      });
     }
   }
 
@@ -36,7 +55,14 @@ class SettingsBoard extends Component {
     }
 
     return (<div>
-      {this.props.sensor.id}
+      <div>{this.props.sensor.id}</div>
+      {this.state.loading && <div>{'loading preset...'}</div>}
+      {this.state.loadError !== null && <div>{`loading failed ${this.state.loadError}`}</div>}
+      {!this.state.loading && !this.state.loadError && this.state.preset !== null && <div>
+        {this.state.preset.zones.map((zone) => (<div key={zone.id}>
+          {`${zone.midiNote} - ${zone.midiTwistNote}`}
+        </div>))}
+      </div>}
     </div>);
   }
 }

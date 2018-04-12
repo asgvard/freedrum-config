@@ -1,4 +1,4 @@
-import {findIndex} from 'lodash';
+import {findIndex, isUndefined, isObject} from 'lodash';
 import {CONSTANTS} from '../constants';
 
 /**
@@ -74,7 +74,9 @@ export class Sensor {
   }
 
   set input(value) {
-    value.onmidimessage = this.onMidiMessage;
+    if (isObject(value) && !isUndefined(value.onmidimessage)) {
+      value.onmidimessage = this.onMidiMessage;
+    }
 
     this._input = value;
   }
@@ -128,6 +130,10 @@ export class Sensor {
   writeCommand(channel, command, value) {
     const {output} = this;
 
+    if (!output) {
+      return;
+    }
+
     this.pendingWrites++;
 
     setTimeout(() => {
@@ -154,6 +160,10 @@ export class Sensor {
 
   readPresetAsync() {
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject('Preset load timeout');
+      }, CONSTANTS.PRESET_LOAD_TIMEOUT);
+
       const sensorValuesPromise = Promise.all([
         this.readValueAsync(0, CONSTANTS.MIDI_CC_SENSIVITY),
         this.readValueAsync(0, CONSTANTS.MIDI_CC_THRESHOLD),
@@ -183,16 +193,19 @@ export class Sensor {
           zones: []
         };
 
-        zonesValues.forEach((zoneValues) => {
+        zonesValues.forEach((zoneValues, index) => {
           const [midiNote, midiTwistNote, yAngle, zAngle] = zoneValues;
 
           preset.zones.push({
+            id: index,
             midiNote,
             midiTwistNote,
             yAngle: Sensor.midiAngleToDecimalAngle(yAngle),
             zAngle: Sensor.midiAngleToDecimalAngle(zAngle)
           });
         });
+
+        clearTimeout(timeout);
 
         resolve(preset);
       }).catch(reject);
