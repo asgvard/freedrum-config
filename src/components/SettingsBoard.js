@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {CONSTANTS} from '../constants';
 
 class SettingsBoard extends Component {
   constructor(props) {
@@ -23,9 +22,9 @@ class SettingsBoard extends Component {
 
   async loadSettings() {
     try {
-      const value = await this.props.sensor.readValueAsync(0, CONSTANTS.MIDI_CC_REF_DRUM_WINDOW);
+      const preset = await this.props.sensor.readPresetAsync();
 
-      console.log('Value is: ', value);
+      console.log('preset is: ', preset);
     } catch (error) {
       console.log('MIDI read error: ', error);
     }
@@ -45,7 +44,7 @@ class SettingsBoard extends Component {
 SettingsBoard.propTypes = {
   sensor: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    readValueAsync: PropTypes.func.isRequired
+    readPresetAsync: PropTypes.func.isRequired
   })
 };
 

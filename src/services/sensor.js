@@ -1,8 +1,44 @@
 import {findIndex} from 'lodash';
 import {CONSTANTS} from '../constants';
 
+/**
+ * Preset format example:
+ * {
+ *   sensivity: 10,
+ *   threshold: 20,
+ *   refDrumStrength: 12,
+ *   refDrumWindow: 40,
+ *   zones: [{
+ *     midiNote: 42,
+ *     midiTwistNote: 46,
+ *     yAngle: 0,
+ *     zAngle: -50
+ *   }]
+ * }
+ */
+
 /* eslint-disable no-underscore-dangle */
 export class Sensor {
+  static midiAngleToDecimalAngle(midiAngle) {
+    const decimalAngle = Math.round(midiAngle * CONSTANTS.PAD_ANGLE_SCALE);
+
+    if (decimalAngle > 180) {
+      return decimalAngle - 360;
+    }
+
+    return decimalAngle;
+  }
+
+  static decimalAngleToMidiAngle(decimalAngle) {
+    const midiAngle = Math.round(decimalAngle / CONSTANTS.PAD_ANGLE_SCALE);
+
+    if (midiAngle < 0) {
+      return midiAngle + 127;
+    }
+
+    return midiAngle;
+  }
+
   constructor() {
     this._id = null;
     this._name = null;
@@ -74,7 +110,7 @@ export class Sensor {
       const [channel, command, value] = data;
 
       this.onMessageListeners.forEach((callback) => {
-        callback(channel, command, value);
+        callback(channel ^ CONSTANTS.MIDI_STATUS_CONTROL_CHANGE, command, value);
       });
     }
   }
@@ -103,14 +139,9 @@ export class Sensor {
   }
 
   readValueAsync(channel, value) {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject('MIDI read timeout');
-      }, CONSTANTS.MIDI_MESSAGE_READ_TIMEOUT + (CONSTANTS.MIDI_WRITE_INTERVAL * this.pendingWrites));
-
+    return new Promise((resolve) => {
       const callback = (responseChannel, responseCommand, responseValue) => {
-        if (value === responseCommand) {
-          clearTimeout(timeout);
+        if (value === responseCommand && responseChannel === channel) {
           this.removeOnMessageListener(callback);
           resolve(responseValue);
         }
@@ -118,6 +149,53 @@ export class Sensor {
 
       this.addOnMessageListener(callback);
       this.writeCommand(channel, CONSTANTS.MIDI_CC_READ_VALUE, value);
+    });
+  }
+
+  readPresetAsync() {
+    return new Promise((resolve, reject) => {
+      const sensorValuesPromise = Promise.all([
+        this.readValueAsync(0, CONSTANTS.MIDI_CC_SENSIVITY),
+        this.readValueAsync(0, CONSTANTS.MIDI_CC_THRESHOLD),
+        this.readValueAsync(0, CONSTANTS.MIDI_CC_REF_DRUM_STRENGTH),
+        this.readValueAsync(0, CONSTANTS.MIDI_CC_REF_DRUM_WINDOW)
+      ]);
+
+      const zonesValuesPromises = [];
+
+      for (let i = 0; i < 10; i++) {
+        zonesValuesPromises.push(Promise.all([
+          this.readValueAsync(i, CONSTANTS.MIDI_CC_NOTE),
+          this.readValueAsync(i, CONSTANTS.MIDI_CC_TWIST_NOTE),
+          this.readValueAsync(i, CONSTANTS.MIDI_CC_Y_POS),
+          this.readValueAsync(i, CONSTANTS.MIDI_CC_Z_POS),
+        ]));
+      }
+
+      Promise.all([sensorValuesPromise, Promise.all(zonesValuesPromises)]).then(([sensorValues, zonesValues]) => {
+        const [sensivity, threshold, refDrumStrength, refDrumWindow] = sensorValues;
+
+        const preset = {
+          sensivity,
+          threshold,
+          refDrumStrength,
+          refDrumWindow,
+          zones: []
+        };
+
+        zonesValues.forEach((zoneValues) => {
+          const [midiNote, midiTwistNote, yAngle, zAngle] = zoneValues;
+
+          preset.zones.push({
+            midiNote,
+            midiTwistNote,
+            yAngle: Sensor.midiAngleToDecimalAngle(yAngle),
+            zAngle: Sensor.midiAngleToDecimalAngle(zAngle)
+          });
+        });
+
+        resolve(preset);
+      }).catch(reject);
     });
   }
 }

@@ -18,14 +18,14 @@ export const CONSTANTS = {
    * Global sensor commands
    */
 
-  /* 10 - 30 */
+  /* suggested values are between 10 and 30 */
   MIDI_CC_SENSIVITY: 105,
   MIDI_CC_THRESHOLD: 104,
 
-  /* default 12 */
+  /* default value 12 */
   MIDI_CC_REF_DRUM_STRENGTH: 111,
 
-  /* default 40 */
+  /* default value 40 */
   MIDI_CC_REF_DRUM_WINDOW: 110,
 
   /**
@@ -37,6 +37,7 @@ export const CONSTANTS = {
    * 8 | 0 | 1 | 2 | 9
    */
   MIDI_CC_NOTE: 106,
+  MIDI_CC_TWIST_NOTE: 112,
 
   /**
    * Vertical angle of the pad. 0deg - low row, 50deg high row
@@ -56,7 +57,13 @@ export const CONSTANTS = {
   MIDI_CC_Y_POS_STREAM: 108,
   MIDI_CC_Z_POS_STREAM: 109,
 
+  MIDI_CONFIG_COMMAND_CC: 20,
+  MIDI_CONFIG_COMMAND_FACTORY_RESET: 1,
+  MIDI_CONFIG_COMMAND_SAVE: 0,
+
   MIDI_MESSAGE_DATA_LENGTH: 3,
 
-  MIDI_MESSAGE_READ_TIMEOUT: 300
+  MIDI_MESSAGE_READ_TIMEOUT: 1000,
+
+  PAD_ANGLE_SCALE: 360.0 / 127
 };
