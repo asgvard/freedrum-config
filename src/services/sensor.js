@@ -165,7 +165,7 @@ export class Sensor {
       }, CONSTANTS.PRESET_LOAD_TIMEOUT);
 
       const sensorValuesPromise = Promise.all([
-        this.readValueAsync(0, CONSTANTS.MIDI_CC_SENSIVITY),
+        this.readValueAsync(0, CONSTANTS.MIDI_CC_SENSITIVITY),
         this.readValueAsync(0, CONSTANTS.MIDI_CC_THRESHOLD),
         this.readValueAsync(0, CONSTANTS.MIDI_CC_REF_DRUM_STRENGTH),
         this.readValueAsync(0, CONSTANTS.MIDI_CC_REF_DRUM_WINDOW)
@@ -183,10 +183,10 @@ export class Sensor {
       }
 
       Promise.all([sensorValuesPromise, Promise.all(zonesValuesPromises)]).then(([sensorValues, zonesValues]) => {
-        const [sensivity, threshold, refDrumStrength, refDrumWindow] = sensorValues;
+        const [sensitivity, threshold, refDrumStrength, refDrumWindow] = sensorValues;
 
         const preset = {
-          sensivity,
+          sensitivity,
           threshold,
           refDrumStrength,
           refDrumWindow,

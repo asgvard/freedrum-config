@@ -19,7 +19,7 @@ export const CONSTANTS = {
    */
 
   /* suggested values are between 10 and 30 */
-  MIDI_CC_SENSIVITY: 105,
+  MIDI_CC_SENSITIVITY: 105,
   MIDI_CC_THRESHOLD: 104,
 
   /* default value 12 */
@@ -65,5 +65,8 @@ export const CONSTANTS = {
 
   PAD_ANGLE_SCALE: 360.0 / 127,
 
-  PRESET_LOAD_TIMEOUT: 10000
+  PRESET_LOAD_TIMEOUT: 10000,
+
+  MIDI_MESSAGE_CHANNEL_NOTE_SET: 41,
+  MIDI_MESSAGE_CHANNEL_NOTE_RELEASE: 57
 };
