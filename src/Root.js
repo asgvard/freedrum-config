@@ -5,6 +5,13 @@ import SensorsList from './components/SensorsList';
 import SettingsBoard from './components/SettingsBoard';
 import PresetsList from './components/PresetsList';
 
+const styles = {
+  root: {
+    flexDirection: 'row',
+    display: 'flex'
+  }
+};
+
 class Root extends Component {
   constructor(props) {
     super(props);
@@ -66,7 +73,7 @@ class Root extends Component {
     const {state: {sensors, activeSensorId}} = this;
 
     return (
-      <div>
+      <div style={styles.root}>
         <SensorsList
           sensors={sensors}
           activeSensorId={activeSensorId}

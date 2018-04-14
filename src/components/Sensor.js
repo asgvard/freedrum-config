@@ -2,6 +2,13 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {CONSTANTS} from '../constants';
 
+const styles = {
+  sensor: {
+    flex: 1,
+    height: 120
+  }
+};
+
 const BLINK_TIMEOUT = 200;
 
 class Sensor extends Component {
@@ -56,7 +63,10 @@ class Sensor extends Component {
       return null;
     }
 
-    return (<div onClick={this.props.onPress}>
+    return (<div
+      style={styles.sensor}
+      onClick={this.props.onPress}
+    >
       {`${this.props.sensor.name} ${this.props.active ? '*' : ''} - ${this.state.blink ? 'PAM!' : ''}`}
     </div>);
   }

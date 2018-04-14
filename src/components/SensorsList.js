@@ -2,7 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Sensor from './Sensor';
 
-const SensorsList = (props) => (<div>
+const styles = {
+  sensorsList: {
+    flex: 1,
+    display: 'flex'
+  }
+};
+
+const SensorsList = (props) => (<div style={styles.sensorsList}>
   {props.sensors.map((sensor) => {
     return (<Sensor
       key={sensor.id}

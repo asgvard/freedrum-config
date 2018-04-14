@@ -1,6 +1,30 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
+import {isUndefined} from 'lodash';
 import {CONSTANTS} from '../constants';
+import NumberPicker from './NumberPicker';
+
+const styles = {
+  settingsBoard: {
+    flex: 2
+  },
+  zonesWrapper: {
+    display: 'flex',
+    flexDirection: 'row'
+  },
+  zoneWrapper: {
+    display: 'flex',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderStyle: 'solid'
+  },
+  zoneWrapperHighlighted: {
+    backgroundColor: 'green'
+  },
+  midiNoteWrapper: {
+    marginRight: 10
+  }
+};
 
 const BLINK_TIMEOUT = 200;
 
@@ -9,9 +33,10 @@ class SettingsBoard extends Component {
     super(props);
 
     this.state = {
-      preset: null,
+      /* To compare with original preset to indicate if there are any unsaved changes */
+      originalPreset: null,
+      updatedPreset: null,
       loading: false,
-      unsavedChanges: false,
       loadError: null,
 
       blinkNote: null
@@ -20,6 +45,7 @@ class SettingsBoard extends Component {
     this.blinkTimeout = null;
 
     this.onSensorMessage = this.onSensorMessage.bind(this);
+    this.onUpdateValue = this.onUpdateValue.bind(this);
   }
 
   componentWillReceiveProps(newProps) {
@@ -30,8 +56,8 @@ class SettingsBoard extends Component {
 
       this.setState({
         loading: true,
-        preset: null,
-        unsavedChanges: false,
+        originalPreset: null,
+        updatedPreset: null,
         loadError: null
       }, () => {
         this.loadSettings();
@@ -48,6 +74,28 @@ class SettingsBoard extends Component {
   onSensorMessage(channel, command) {
     if (channel === CONSTANTS.MIDI_MESSAGE_CHANNEL_NOTE_SET) {
       this.blinkNote(command);
+    }
+  }
+
+  onUpdateValue(settingKey, value, zoneNumber) {
+    if (isUndefined(zoneNumber)) {
+      this.setState({
+        updatedPreset: {
+          ...this.state.updatedPreset,
+          [settingKey]: value
+        }
+      });
+    } else {
+      const newZones = [...this.state.updatedPreset.zones];
+
+      newZones[zoneNumber][settingKey] = value;
+
+      this.setState({
+        updatedPreset: {
+          ...this.state.updatedPreset,
+          zones: newZones
+        }
+      });
     }
   }
 
@@ -68,45 +116,124 @@ class SettingsBoard extends Component {
   }
 
   async loadSettings() {
-    const stateUpdates = {
-      unsavedChanges: false,
-      loading: false
-    };
-
     try {
       const preset = await this.props.sensor.readPresetAsync();
 
       this.setState({
-        ...stateUpdates,
-        preset,
-        loadError: null
+        loading: false,
+        loadError: null,
+        originalPreset: JSON.parse(JSON.stringify(preset)),
+        updatedPreset: JSON.parse(JSON.stringify(preset))
       });
     } catch (error) {
       this.setState({
-        ...stateUpdates,
-        preset: null,
+        loading: false,
+        originalPreset: null,
+        updatedPreset: null,
         loadError: error.toString ? error.toString() : error
       });
     }
   }
 
+  renderZone(zoneIndex) {
+    const zone = this.state.originalPreset.zones[zoneIndex];
+
+    const blinkedStyle = this.state.blinkNote === zone.midiNote ? styles.zoneWrapperHighlighted : {};
+
+    return (<div
+      key={zone.id}
+      style={{
+        ...styles.zoneWrapper,
+        ...blinkedStyle
+      }}
+    >
+      <div style={styles.midiNoteWrapper}>
+        <NumberPicker
+          value={this.state.updatedPreset.zones[zoneIndex].midiNote}
+          onValueChange={(value) => {
+            this.onUpdateValue('midiNote', value, zoneIndex);
+          }}
+        />
+      </div>
+      <div style={styles.midiNoteWrapper}>
+        <NumberPicker
+          value={this.state.updatedPreset.zones[zoneIndex].midiTwistNote}
+          onValueChange={(value) => {
+            this.onUpdateValue('midiTwistNote', value, zoneIndex);
+          }}
+        />
+      </div>
+    </div>);
+  }
+
   render() {
     if (!this.props.sensor) {
-      return null;
+      return (<div style={styles.settingsBoard} />);
     }
 
-    return (<div>
+    return (<div style={styles.settingsBoard}>
       <div>{this.props.sensor.id}</div>
       {this.state.loading && <div>{'loading preset...'}</div>}
       {this.state.loadError !== null && <div>{`loading failed ${this.state.loadError}`}</div>}
-      {!this.state.loading && !this.state.loadError && this.state.preset !== null && <div>
-        {`Sensitivity: ${this.state.preset.sensitivity}`}
-        {`Threshold: ${this.state.preset.threshold}`}
-        {`Reference Drum Strength: ${this.state.preset.refDrumStrength}`}
-        {`Reference Drum Window: ${this.state.preset.refDrumWindow}`}
-        {this.state.preset.zones.map((zone) => (<div key={zone.id}>
-          {`${zone.midiNote} - ${zone.midiTwistNote} ${this.state.blinkNote === zone.midiNote ? 'PAM!' : ''}`}
-        </div>))}
+      {!this.state.loading && !this.state.loadError && this.state.originalPreset !== null && <div>
+        <div>
+          {'Sensitivity: '}
+          <NumberPicker
+            value={this.state.updatedPreset.sensitivity}
+            onValueChange={(value) => {
+              this.onUpdateValue('sensitivity', value);
+            }}
+          />
+        </div>
+        <div>
+          {'Threshold: '}
+          <NumberPicker
+            value={this.state.updatedPreset.threshold}
+            onValueChange={(value) => {
+              this.onUpdateValue('threshold', value);
+            }}
+          />
+        </div>
+        <div>
+          {'Reference Drum Strength: '}
+          <NumberPicker
+            value={this.state.updatedPreset.refDrumStrength}
+            onValueChange={(value) => {
+              this.onUpdateValue('refDrumStrength', value);
+            }}
+          />
+        </div>
+        <div>
+          {'Reference Drum Window: '}
+          <NumberPicker
+            value={this.state.updatedPreset.refDrumWindow}
+            onValueChange={(value) => {
+              this.onUpdateValue('refDrumWindow', value);
+            }}
+          />
+        </div>
+        <div style={styles.zonesWrapper}>
+          <div>
+            {this.renderZone(6)}
+            {this.renderZone(8)}
+          </div>
+          <div>
+            {this.renderZone(3)}
+            {this.renderZone(0)}
+          </div>
+          <div>
+            {this.renderZone(4)}
+            {this.renderZone(1)}
+          </div>
+          <div>
+            {this.renderZone(5)}
+            {this.renderZone(2)}
+          </div>
+          <div>
+            {this.renderZone(7)}
+            {this.renderZone(9)}
+          </div>
+        </div>
       </div>}
     </div>);
   }
