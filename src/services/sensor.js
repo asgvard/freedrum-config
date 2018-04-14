@@ -242,9 +242,11 @@ export class Sensor {
 
       if (zone) {
         isNumber(zone.midiNote) && this.writeCommand(i, CONSTANTS.MIDI_CC_NOTE, zone.midiNote);
-        isNumber(zone.midiTwistNote) && this.writeCommand(i, CONSTANTS.MIDI_CC_TWIST_NOTE, zone.midiTwistNote);
 
-        if (isNumber(zone.midiNote) && zone.midiNote > 0) {
+        const twistNote = zone.midiNote > 0 && isNumber(zone.midiTwistNote) ? zone.midiTwistNote : 0;
+        this.writeCommand(i, CONSTANTS.MIDI_CC_TWIST_NOTE, twistNote);
+
+        if (zone.midiNote > 0) {
           const [yAngle, zAngle] = Sensor.getAnglesByZone(i);
 
           this.writeCommand(i, CONSTANTS.MIDI_CC_Y_POS, Sensor.decimalAngleToMidiAngle(yAngle));
