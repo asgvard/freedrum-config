@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {isUndefined} from 'lodash';
+import {isUndefined, isEqual} from 'lodash';
 import {CONSTANTS} from '../constants';
 import NumberPicker from './NumberPicker';
 
@@ -39,13 +39,16 @@ class SettingsBoard extends Component {
       loading: false,
       loadError: null,
 
-      blinkNote: null
+      blinkNote: null,
+
+      saving: false
     };
 
     this.blinkTimeout = null;
 
     this.onSensorMessage = this.onSensorMessage.bind(this);
     this.onUpdateValue = this.onUpdateValue.bind(this);
+    this.onSavePreset = this.onSavePreset.bind(this);
   }
 
   componentWillReceiveProps(newProps) {
@@ -97,6 +100,25 @@ class SettingsBoard extends Component {
         }
       });
     }
+  }
+
+  onSavePreset() {
+    if (isEqual(this.state.originalPreset, this.state.updatedPreset) || this.state.saving) {
+      return;
+    }
+
+    this.setState({
+      saving: true
+    }, () => {
+      this.props.sensor.savePreset(this.state.updatedPreset);
+
+      setTimeout(() => {
+        this.setState({
+          saving: false,
+          originalPreset: JSON.parse(JSON.stringify(this.state.updatedPreset))
+        });
+      }, CONSTANTS.MIDI_WRITE_INTERVAL * 50);
+    });
   }
 
   blinkNote(note) {
@@ -234,6 +256,8 @@ class SettingsBoard extends Component {
             {this.renderZone(9)}
           </div>
         </div>
+        <div onClick={this.onSavePreset}>{'Save'}</div>
+        <div>{this.state.saving ? ' - Saving...' : ''}</div>
       </div>}
     </div>);
   }
@@ -243,6 +267,7 @@ SettingsBoard.propTypes = {
   sensor: PropTypes.shape({
     id: PropTypes.string.isRequired,
     readPresetAsync: PropTypes.func.isRequired,
+    savePreset: PropTypes.func.isRequired,
     addOnMessageListener: PropTypes.func.isRequired,
     removeOnMessageListener: PropTypes.func.isRequired
   })

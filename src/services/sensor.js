@@ -1,4 +1,4 @@
-import {findIndex, isUndefined, isObject} from 'lodash';
+import {findIndex, isUndefined, isObject, isNumber} from 'lodash';
 import {CONSTANTS} from '../constants';
 
 /**
@@ -17,8 +17,25 @@ import {CONSTANTS} from '../constants';
  * }
  */
 
+const ANGLES = {
+  0: [0, -50],
+  1: [0, 0],
+  2: [0, 50],
+  3: [50, -50],
+  4: [50, 0],
+  5: [50, 50],
+  6: [50, -90],
+  7: [50, 90],
+  8: [0, -90],
+  9: [0, 90]
+};
+
 /* eslint-disable no-underscore-dangle */
 export class Sensor {
+  static getAnglesByZone(zoneIndex) {
+    return ANGLES[zoneIndex];
+  }
+
   static midiAngleToDecimalAngle(midiAngle) {
     const decimalAngle = Math.round(midiAngle * CONSTANTS.PAD_ANGLE_SCALE);
 
@@ -210,5 +227,35 @@ export class Sensor {
         resolve(preset);
       }).catch(reject);
     });
+  }
+
+  savePreset(preset) {
+    isNumber(preset.sensitivity) && this.writeCommand(0, CONSTANTS.MIDI_CC_SENSITIVITY, preset.sensitivity);
+    isNumber(preset.sensitivity) && this.writeCommand(0, CONSTANTS.MIDI_CC_THRESHOLD, preset.threshold);
+    isNumber(preset.sensitivity) && this.writeCommand(0, CONSTANTS.MIDI_CC_REF_DRUM_STRENGTH, preset.refDrumStrength);
+    isNumber(preset.sensitivity) && this.writeCommand(0, CONSTANTS.MIDI_CC_REF_DRUM_WINDOW, preset.refDrumWindow);
+
+    const {zones} = preset;
+
+    for (let i = 0; i < 10; i++) {
+      const zone = zones[i];
+
+      if (zone) {
+        isNumber(zone.midiNote) && this.writeCommand(i, CONSTANTS.MIDI_CC_NOTE, zone.midiNote);
+        isNumber(zone.midiTwistNote) && this.writeCommand(i, CONSTANTS.MIDI_CC_TWIST_NOTE, zone.midiTwistNote);
+
+        if (isNumber(zone.midiNote) && zone.midiNote > 0) {
+          const [yAngle, zAngle] = Sensor.getAnglesByZone(i);
+
+          this.writeCommand(i, CONSTANTS.MIDI_CC_Y_POS, Sensor.decimalAngleToMidiAngle(yAngle));
+          this.writeCommand(i, CONSTANTS.MIDI_CC_Z_POS, Sensor.decimalAngleToMidiAngle(zAngle));
+        }
+      } else {
+        this.writeCommand(i, CONSTANTS.MIDI_CC_NOTE, 0);
+        this.writeCommand(i, CONSTANTS.MIDI_CC_TWIST_NOTE, 0);
+      }
+    }
+
+    this.writeCommand(0, CONSTANTS.MIDI_CONFIG_COMMAND_CC, CONSTANTS.MIDI_CONFIG_COMMAND_SAVE);
   }
 }
