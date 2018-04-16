@@ -1,11 +1,30 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
+import theme from '../theme';
 import {CONSTANTS} from '../constants';
+import imageSrc from '../resources/images/sensor.jpg';
+import imageActiveSrc from '../resources/images/sensor-active.jpg';
 
 const styles = {
   sensor: {
-    flex: 1,
-    height: 120
+    height: 120,
+    display: 'flex',
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-start'
+  },
+  sensorImage: {
+    height: '100%',
+    width: '90%',
+    objectFit: 'contain'
+  },
+  blink: {
+    height: '100%',
+    width: '10%',
+    backgroundColor: theme.accent
   }
 };
 
@@ -67,14 +86,18 @@ class Sensor extends Component {
       style={styles.sensor}
       onClick={this.props.onPress}
     >
-      {`${this.props.sensor.name} ${this.props.active ? '*' : ''} - ${this.state.blink ? 'PAM!' : ''}`}
+      <img
+        src={this.props.active ? imageActiveSrc : imageSrc}
+        alt={''}
+        style={styles.sensorImage}
+      />
+      {this.state.blink === true && <div style={styles.blink} />}
     </div>);
   }
 }
 
 Sensor.propTypes = {
   sensor: PropTypes.shape({
-    name: PropTypes.string.isRequired,
     addOnMessageListener: PropTypes.func.isRequired,
     removeOnMessageListener: PropTypes.func.isRequired
   }).isRequired,

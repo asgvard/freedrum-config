@@ -1,11 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Sensor from './Sensor';
+import theme from '../theme';
 
 const styles = {
   sensorsList: {
     flex: 1,
-    display: 'flex'
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: theme.background
   }
 };
 

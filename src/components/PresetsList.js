@@ -2,10 +2,34 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {isEqual} from 'lodash';
 import {CONSTANTS} from '../constants';
+import theme from '../theme';
 
 const styles = {
   presetsList: {
-    flex: 1
+    flex: 1,
+    backgroundColor: theme.background
+  },
+  presetWrapper: {
+    flex: 1,
+    height: 120,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    borderBottomColor: theme.secondary,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid'
+  },
+  activePreset: {
+    height: '100%',
+    width: '10%',
+    backgroundColor: theme.accent
+  },
+  presetName: {
+    height: 18,
+    width: '90%',
+    textAlign: 'center',
+    color: theme.font,
+    fontSize: 18
   }
 };
 
@@ -15,8 +39,10 @@ const PresetsList = (props) => (<div style={styles.presetsList}>
     onClick={() => {
       props.onPresetClick(predefinedPreset.preset);
     }}
+    style={styles.presetWrapper}
   >
-    {`${predefinedPreset.name} ${isEqual(predefinedPreset.preset, props.currentPreset) ? '*' : ''}`}
+    {isEqual(predefinedPreset.preset, props.currentPreset) && <div style={styles.activePreset} />}
+    <div style={styles.presetName}>{predefinedPreset.name}</div>
   </div>))}
 </div>);
 
