@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {isUndefined, isEqual} from 'lodash';
+import {isUndefined, isEqual, isObject} from 'lodash';
 import {CONSTANTS} from '../constants';
 import NumberPicker from './NumberPicker';
 
@@ -71,6 +71,36 @@ class SettingsBoard extends Component {
       if (this.props.sensor.removeOnMessageListener) {
         this.props.sensor.removeOnMessageListener(this.onSensorMessage);
       }
+    }
+
+    if (this.props.sensor && !newProps.sensor) {
+      this.setState({
+        loading: false,
+        originalPreset: null,
+        updatedPreset: null,
+        loadError: null
+      });
+    }
+
+    /**
+     * Apply external preset
+     */
+    if (
+      this.props.externalPreset !== newProps.externalPreset &&
+      !this.state.loading &&
+      this.state.loadError === null &&
+      isObject(this.state.updatedPreset) &&
+      !isEqual(newProps.externalPreset, this.state.updatedPreset)
+    ) {
+      this.setState({
+        updatedPreset: newProps.externalPreset
+      });
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!isEqual(prevState.updatedPreset, this.state.updatedPreset)) {
+      this.props.onSettingsChanged(this.state.updatedPreset);
     }
   }
 
@@ -270,11 +300,14 @@ SettingsBoard.propTypes = {
     savePreset: PropTypes.func.isRequired,
     addOnMessageListener: PropTypes.func.isRequired,
     removeOnMessageListener: PropTypes.func.isRequired
-  })
+  }),
+  onSettingsChanged: PropTypes.func.isRequired,
+  externalPreset: PropTypes.object
 };
 
 SettingsBoard.defaultProps = {
-  sensor: null
+  sensor: null,
+  externalPreset: null
 };
 
 export default SettingsBoard;

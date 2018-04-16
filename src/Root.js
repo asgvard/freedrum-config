@@ -24,6 +24,8 @@ class Root extends Component {
     this.onSensorAdded = this.onSensorAdded.bind(this);
     this.onSensorRemoved = this.onSensorRemoved.bind(this);
     this.onSensorPress = this.onSensorPress.bind(this);
+    this.onSettingsChanged = this.onSettingsChanged.bind(this);
+    this.onPresetClick = this.onPresetClick.bind(this);
   }
 
   componentDidMount() {
@@ -69,6 +71,18 @@ class Root extends Component {
     });
   }
 
+  onSettingsChanged(updatedPreset) {
+    this.setState({
+      currentPreset: updatedPreset
+    });
+  }
+
+  onPresetClick(preset) {
+    this.setState({
+      externalPreset: JSON.parse(JSON.stringify(preset))
+    });
+  }
+
   render() {
     const {state: {sensors, activeSensorId}} = this;
 
@@ -81,8 +95,13 @@ class Root extends Component {
         />
         <SettingsBoard
           sensor={find(sensors, (sensor) => sensor.id === activeSensorId)}
+          onSettingsChanged={this.onSettingsChanged}
+          externalPreset={this.state.externalPreset}
         />
-        <PresetsList />
+        <PresetsList
+          onPresetClick={this.onPresetClick}
+          currentPreset={this.state.currentPreset}
+        />
       </div>
     );
   }
