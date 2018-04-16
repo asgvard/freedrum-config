@@ -70,6 +70,8 @@ export const CONSTANTS = {
   MIDI_MESSAGE_CHANNEL_NOTE_SET: 41,
   MIDI_MESSAGE_CHANNEL_NOTE_RELEASE: 57,
 
+  PRESET_LOADING_CANCELLED_MESSAGE: 'Load cancelled',
+
   PRESETS: [{
     name: 'Foot Pedal',
     preset: {

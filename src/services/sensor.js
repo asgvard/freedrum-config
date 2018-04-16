@@ -1,4 +1,4 @@
-import {findIndex, isUndefined, isObject, isNumber} from 'lodash';
+import {findIndex, isUndefined, isObject, isNumber, isFunction} from 'lodash';
 import {CONSTANTS} from '../constants';
 
 /**
@@ -65,6 +65,8 @@ export class Sensor {
     this._outputId = null;
 
     this.pendingWrites = 0;
+
+    this.readPresetPromiseReject = null;
 
     this.onMessageListeners = [];
     this.onMidiMessage = this.onMidiMessage.bind(this);
@@ -175,8 +177,16 @@ export class Sensor {
     });
   }
 
+  cancelPresetLoad() {
+    if (isFunction(this.readPresetPromiseReject)) {
+      this.readPresetPromiseReject(CONSTANTS.PRESET_LOADING_CANCELLED_MESSAGE);
+    }
+  }
+
   readPresetAsync() {
     return new Promise((resolve, reject) => {
+      this.readPresetPromiseReject = reject;
+
       const timeout = setTimeout(() => {
         reject('Preset load timeout');
       }, CONSTANTS.PRESET_LOAD_TIMEOUT);
@@ -225,6 +235,8 @@ export class Sensor {
         clearTimeout(timeout);
 
         resolve(preset);
+
+        this.readPresetPromiseReject = null;
       }).catch(reject);
     });
   }

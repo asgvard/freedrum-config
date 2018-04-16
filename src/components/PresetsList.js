@@ -29,7 +29,9 @@ const styles = {
     width: '90%',
     textAlign: 'center',
     color: theme.font,
-    fontSize: 18
+    fontSize: 18,
+    textDecoration: 'none',
+    userSelect: 'none'
   }
 };
 

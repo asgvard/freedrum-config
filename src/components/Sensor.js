@@ -9,12 +9,15 @@ const styles = {
   sensor: {
     height: 120,
     display: 'flex',
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 0,
+    paddingBottom: 0,
     paddingLeft: 10,
     paddingRight: 0,
     alignItems: 'center',
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
+    borderBottomColor: theme.secondary,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid'
   },
   sensorImage: {
     height: '100%',

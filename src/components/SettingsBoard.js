@@ -3,10 +3,20 @@ import PropTypes from 'prop-types';
 import {isUndefined, isEqual, isObject} from 'lodash';
 import {CONSTANTS} from '../constants';
 import NumberPicker from './NumberPicker';
+import theme from '../theme';
+import Loader from './Loader';
 
 const styles = {
   settingsBoard: {
-    flex: 2
+    flex: 2,
+    backgroundColor: theme.background,
+    borderRightColor: theme.secondary,
+    borderRightWidth: 1,
+    borderRightStyle: 'solid',
+    borderLeftColor: theme.secondary,
+    borderLeftWidth: 1,
+    borderLeftStyle: 'solid',
+    display: 'flex'
   },
   zonesWrapper: {
     display: 'flex',
@@ -23,6 +33,32 @@ const styles = {
   },
   midiNoteWrapper: {
     marginRight: 10
+  },
+  loadingErrorWrapper: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column'
+  },
+  loadingErrorText: {
+    color: theme.font,
+    fontSize: 18,
+    textDecoration: 'none',
+    userSelect: 'none'
+  },
+  loadingErrorButton: {
+    color: theme.font,
+    backgroundColor: theme.accent,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 20,
+    paddingRight: 20,
+    margin: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    userSelect: 'none'
   }
 };
 
@@ -30,6 +66,7 @@ const BLINK_TIMEOUT = 200;
 
 class SettingsBoard extends Component {
   constructor(props) {
+    console.log('initial props: ', props);
     super(props);
 
     this.state = {
@@ -49,27 +86,18 @@ class SettingsBoard extends Component {
     this.onSensorMessage = this.onSensorMessage.bind(this);
     this.onUpdateValue = this.onUpdateValue.bind(this);
     this.onSavePreset = this.onSavePreset.bind(this);
+    this.loadSettings = this.loadSettings.bind(this);
   }
 
   componentWillReceiveProps(newProps) {
-    if (newProps.sensor && this.props.sensor !== newProps.sensor) {
-      if (newProps.sensor.addOnMessageListener) {
+    if (this.props.sensor !== newProps.sensor) {
+      if (newProps.sensor && newProps.sensor.addOnMessageListener) {
         newProps.sensor.addOnMessageListener(this.onSensorMessage);
       }
 
-      this.setState({
-        loading: true,
-        originalPreset: null,
-        updatedPreset: null,
-        loadError: null
-      }, () => {
-        this.loadSettings();
-      });
-    }
-
-    if (this.props.sensor && this.props.sensor !== newProps.sensor) {
-      if (this.props.sensor.removeOnMessageListener) {
+      if (this.props.sensor && this.props.sensor.removeOnMessageListener) {
         this.props.sensor.removeOnMessageListener(this.onSensorMessage);
+        this.props.sensor.cancelPresetLoad();
       }
     }
 
@@ -88,7 +116,7 @@ class SettingsBoard extends Component {
     if (
       this.props.externalPreset !== newProps.externalPreset &&
       !this.state.loading &&
-      this.state.loadError === null &&
+      !this.state.loadError &&
       isObject(this.state.updatedPreset) &&
       !isEqual(newProps.externalPreset, this.state.updatedPreset)
     ) {
@@ -101,6 +129,10 @@ class SettingsBoard extends Component {
   componentDidUpdate(prevProps, prevState) {
     if (!isEqual(prevState.updatedPreset, this.state.updatedPreset)) {
       this.props.onSettingsChanged(this.state.updatedPreset);
+    }
+
+    if (prevProps.sensor !== this.props.sensor && this.props.sensor) {
+      this.loadSettings();
     }
   }
 
@@ -167,24 +199,40 @@ class SettingsBoard extends Component {
     });
   }
 
-  async loadSettings() {
-    try {
-      const preset = await this.props.sensor.readPresetAsync();
-
-      this.setState({
-        loading: false,
-        loadError: null,
-        originalPreset: JSON.parse(JSON.stringify(preset)),
-        updatedPreset: JSON.parse(JSON.stringify(preset))
-      });
-    } catch (error) {
-      this.setState({
-        loading: false,
-        originalPreset: null,
-        updatedPreset: null,
-        loadError: error.toString ? error.toString() : error
-      });
+  loadSettings() {
+    if (!this.props.sensor) {
+      return;
     }
+
+    this.setState({
+      loading: true,
+      originalPreset: null,
+      updatedPreset: null,
+      loadError: null
+    }, async () => {
+      try {
+        const preset = await this.props.sensor.readPresetAsync();
+
+        this.setState({
+          loading: false,
+          loadError: null,
+          originalPreset: JSON.parse(JSON.stringify(preset)),
+          updatedPreset: JSON.parse(JSON.stringify(preset))
+        });
+      } catch (error) {
+        /**
+         * Might be rejected intentionally
+         */
+        if (!error.toString || error.toString() !== CONSTANTS.PRESET_LOADING_CANCELLED_MESSAGE) {
+          this.setState({
+            loading: false,
+            originalPreset: null,
+            updatedPreset: null,
+            loadError: error.toString ? error.toString() : error
+          });
+        }
+      }
+    });
   }
 
   renderZone(zoneIndex) {
@@ -224,9 +272,14 @@ class SettingsBoard extends Component {
     }
 
     return (<div style={styles.settingsBoard}>
-      <div>{this.props.sensor.id}</div>
-      {this.state.loading && <div>{'loading preset...'}</div>}
-      {this.state.loadError !== null && <div>{`loading failed ${this.state.loadError}`}</div>}
+      {this.state.loading && <Loader color={theme.accent} />}
+      {this.state.loadError !== null && <div style={styles.loadingErrorWrapper}>
+        <div style={styles.loadingErrorText}>{'Loading failed, try again'}</div>
+        <div
+          onClick={this.loadSettings}
+          style={styles.loadingErrorButton}
+        >{'Reload'}</div>
+      </div>}
       {!this.state.loading && !this.state.loadError && this.state.originalPreset !== null && <div>
         <div>
           {'Sensitivity: '}
@@ -295,11 +348,11 @@ class SettingsBoard extends Component {
 
 SettingsBoard.propTypes = {
   sensor: PropTypes.shape({
-    id: PropTypes.string.isRequired,
     readPresetAsync: PropTypes.func.isRequired,
     savePreset: PropTypes.func.isRequired,
     addOnMessageListener: PropTypes.func.isRequired,
-    removeOnMessageListener: PropTypes.func.isRequired
+    removeOnMessageListener: PropTypes.func.isRequired,
+    cancelPresetLoad: PropTypes.func.isRequired
   }),
   onSettingsChanged: PropTypes.func.isRequired,
   externalPreset: PropTypes.object
