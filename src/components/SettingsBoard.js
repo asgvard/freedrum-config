@@ -26,28 +26,58 @@ const styles = {
     display: 'flex',
     flexDirection: 'row',
     borderWidth: 1,
-    borderStyle: 'solid'
+    borderStyle: 'solid',
+    borderColor: theme.secondary,
+    margin: 5
   },
   zoneWrapperHighlighted: {
-    backgroundColor: 'green'
+    backgroundColor: theme.accent
   },
   midiNoteWrapper: {
-    marginRight: 10
+
   },
-  loadingErrorWrapper: {
+  errorWrapper: {
     flex: 1,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column'
   },
-  loadingErrorText: {
+  errorText: {
     color: theme.font,
     fontSize: 18,
     textDecoration: 'none',
     userSelect: 'none'
   },
-  loadingErrorButton: {
+  boardWrapper: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+
+  settingsRow: {
+    width: '100%',
+    justifyContent: 'center',
+    display: 'flex',
+    flexDirection: 'row'
+  },
+  settingWrapper: {
+    margin: 10,
+    color: theme.font,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  boardButtonsWrapper: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  button: {
     color: theme.font,
     backgroundColor: theme.accent,
     paddingTop: 10,
@@ -58,7 +88,8 @@ const styles = {
     fontSize: 18,
     fontWeight: 'bold',
     textDecoration: 'none',
-    userSelect: 'none'
+    userSelect: 'none',
+    textAlign: 'center'
   }
 };
 
@@ -66,7 +97,6 @@ const BLINK_TIMEOUT = 200;
 
 class SettingsBoard extends Component {
   constructor(props) {
-    console.log('initial props: ', props);
     super(props);
 
     this.state = {
@@ -87,6 +117,7 @@ class SettingsBoard extends Component {
     this.onUpdateValue = this.onUpdateValue.bind(this);
     this.onSavePreset = this.onSavePreset.bind(this);
     this.loadSettings = this.loadSettings.bind(this);
+    this.onFactoryReset = this.onFactoryReset.bind(this);
   }
 
   componentWillReceiveProps(newProps) {
@@ -176,10 +207,36 @@ class SettingsBoard extends Component {
 
       setTimeout(() => {
         this.setState({
-          saving: false,
-          originalPreset: JSON.parse(JSON.stringify(this.state.updatedPreset))
+          saving: false
+        }, () => {
+          this.state.loading === false && this.loadSettings();
         });
       }, CONSTANTS.MIDI_WRITE_INTERVAL * 50);
+    });
+  }
+
+  onFactoryReset() {
+    if (this.state.saving) {
+      return;
+    }
+
+    /* eslint-disable no-restricted-globals */
+    if (!confirm('Are you sure want to perform a Factory Reset?')) {
+      return;
+    }
+
+    this.setState({
+      saving: true
+    }, () => {
+      this.props.sensor.factoryReset();
+
+      setTimeout(() => {
+        this.setState({
+          saving: false
+        }, () => {
+          this.state.loading === false && this.loadSettings();
+        });
+      }, CONSTANTS.MIDI_WRITE_INTERVAL * 10);
     });
   }
 
@@ -267,55 +324,70 @@ class SettingsBoard extends Component {
   }
 
   render() {
-    if (!this.props.sensor) {
-      return (<div style={styles.settingsBoard} />);
-    }
+    let content = null;
 
-    return (<div style={styles.settingsBoard}>
-      {this.state.loading && <Loader color={theme.accent} />}
-      {this.state.loadError !== null && <div style={styles.loadingErrorWrapper}>
-        <div style={styles.loadingErrorText}>{'Loading failed, try again'}</div>
+    const saveButtonStyle = isEqual(this.state.originalPreset, this.state.updatedPreset) ? {
+      backgroundColor: theme.secondary,
+      color: theme.fontSecondary
+    } : {};
+
+    if (!this.props.sensor) {
+      content = (<div style={styles.errorWrapper}>
+        <div style={styles.errorText}>{'No sensors found'}</div>
+      </div>);
+    } else if (this.state.loading || this.state.saving) {
+      content = <Loader color={theme.accent} />;
+    } else if (this.state.loadError !== null) {
+      content = (<div style={styles.errorWrapper}>
+        <div style={styles.errorText}>{'Loading failed, try again'}</div>
         <div
           onClick={this.loadSettings}
-          style={styles.loadingErrorButton}
-        >{'Reload'}</div>
-      </div>}
-      {!this.state.loading && !this.state.loadError && this.state.originalPreset !== null && <div>
-        <div>
-          {'Sensitivity: '}
-          <NumberPicker
-            value={this.state.updatedPreset.sensitivity}
-            onValueChange={(value) => {
-              this.onUpdateValue('sensitivity', value);
-            }}
-          />
+          style={styles.button}
+        >
+          {'Reload'}
         </div>
-        <div>
-          {'Threshold: '}
-          <NumberPicker
-            value={this.state.updatedPreset.threshold}
-            onValueChange={(value) => {
-              this.onUpdateValue('threshold', value);
-            }}
-          />
+      </div>);
+    } else if (this.state.originalPreset !== null) {
+      content = (<div style={styles.boardWrapper}>
+        <div style={styles.settingsRow}>
+          <div style={styles.settingWrapper}>
+            {'Sensitivity: '}
+            <NumberPicker
+              value={this.state.updatedPreset.sensitivity}
+              onValueChange={(value) => {
+                this.onUpdateValue('sensitivity', value);
+              }}
+            />
+          </div>
+          <div style={styles.settingWrapper}>
+            {'Threshold: '}
+            <NumberPicker
+              value={this.state.updatedPreset.threshold}
+              onValueChange={(value) => {
+                this.onUpdateValue('threshold', value);
+              }}
+            />
+          </div>
         </div>
-        <div>
-          {'Reference Drum Strength: '}
-          <NumberPicker
-            value={this.state.updatedPreset.refDrumStrength}
-            onValueChange={(value) => {
-              this.onUpdateValue('refDrumStrength', value);
-            }}
-          />
-        </div>
-        <div>
-          {'Reference Drum Window: '}
-          <NumberPicker
-            value={this.state.updatedPreset.refDrumWindow}
-            onValueChange={(value) => {
-              this.onUpdateValue('refDrumWindow', value);
-            }}
-          />
+        <div style={styles.settingsRow}>
+          <div style={styles.settingWrapper}>
+            {'Reference Drum Strength: '}
+            <NumberPicker
+              value={this.state.updatedPreset.refDrumStrength}
+              onValueChange={(value) => {
+                this.onUpdateValue('refDrumStrength', value);
+              }}
+            />
+          </div>
+          <div style={styles.settingWrapper}>
+            {'Reference Drum Window: '}
+            <NumberPicker
+              value={this.state.updatedPreset.refDrumWindow}
+              onValueChange={(value) => {
+                this.onUpdateValue('refDrumWindow', value);
+              }}
+            />
+          </div>
         </div>
         <div style={styles.zonesWrapper}>
           <div>
@@ -339,9 +411,24 @@ class SettingsBoard extends Component {
             {this.renderZone(9)}
           </div>
         </div>
-        <div onClick={this.onSavePreset}>{'Save'}</div>
-        <div>{this.state.saving ? ' - Saving...' : ''}</div>
-      </div>}
+        <div style={styles.boardButtonsWrapper}>
+          <div
+            style={{
+              ...styles.button,
+              ...saveButtonStyle
+            }}
+            onClick={this.onSavePreset}
+          >{'Save'}</div>
+          <div
+            style={styles.button}
+            onClick={this.onFactoryReset}
+          >{'Factory Reset'}</div>
+        </div>
+      </div>);
+    }
+
+    return (<div style={styles.settingsBoard}>
+      {content}
     </div>);
   }
 }
@@ -352,7 +439,8 @@ SettingsBoard.propTypes = {
     savePreset: PropTypes.func.isRequired,
     addOnMessageListener: PropTypes.func.isRequired,
     removeOnMessageListener: PropTypes.func.isRequired,
-    cancelPresetLoad: PropTypes.func.isRequired
+    cancelPresetLoad: PropTypes.func.isRequired,
+    factoryReset: PropTypes.func.isRequired
   }),
   onSettingsChanged: PropTypes.func.isRequired,
   externalPreset: PropTypes.object

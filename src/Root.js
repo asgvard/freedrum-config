@@ -4,11 +4,42 @@ import {initMidi, addOnSensorAddedListener, addOnSensorRemovedListener} from './
 import SensorsList from './components/SensorsList';
 import SettingsBoard from './components/SettingsBoard';
 import PresetsList from './components/PresetsList';
+import theme from './theme';
+import logoSrc from './resources/images/freedrum-logo.png';
 
 const styles = {
   root: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  header: {
+    height: 40,
+    display: 'flex',
     flexDirection: 'row',
-    display: 'flex'
+    backgroundColor: theme.background,
+    borderBottomColor: theme.secondary,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    padding: 10
+  },
+  headerLogo: {
+    flex: 1,
+    width: '20%',
+    objectFit: 'contain'
+  },
+  headerTitle: {
+    flex: 3,
+    textAlign: 'center',
+    fontSize: 30,
+    color: theme.font
+  },
+  headerSpacer: {
+    flex: 1
+  },
+  content: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'row'
   }
 };
 
@@ -88,20 +119,31 @@ class Root extends Component {
 
     return (
       <div style={styles.root}>
-        <SensorsList
-          sensors={sensors}
-          activeSensorId={activeSensorId}
-          onSensorPress={this.onSensorPress}
-        />
-        <SettingsBoard
-          sensor={find(sensors, (sensor) => sensor.id === activeSensorId)}
-          onSettingsChanged={this.onSettingsChanged}
-          externalPreset={this.state.externalPreset}
-        />
-        <PresetsList
-          onPresetClick={this.onPresetClick}
-          currentPreset={this.state.currentPreset}
-        />
+        <div style={styles.header}>
+          <img
+            src={logoSrc}
+            alt={''}
+            style={styles.headerLogo}
+          />
+          <div style={styles.headerTitle}>{'Configuration Tool'}</div>
+          <div style={styles.headerSpacer} />
+        </div>
+        <div style={styles.content}>
+          <SensorsList
+            sensors={sensors}
+            activeSensorId={activeSensorId}
+            onSensorPress={this.onSensorPress}
+          />
+          <SettingsBoard
+            sensor={find(sensors, (sensor) => sensor.id === activeSensorId)}
+            onSettingsChanged={this.onSettingsChanged}
+            externalPreset={this.state.externalPreset}
+          />
+          <PresetsList
+            onPresetClick={this.onPresetClick}
+            currentPreset={this.state.currentPreset}
+          />
+        </div>
       </div>
     );
   }

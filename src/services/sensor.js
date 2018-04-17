@@ -272,4 +272,8 @@ export class Sensor {
 
     this.writeCommand(0, CONSTANTS.MIDI_CONFIG_COMMAND_CC, CONSTANTS.MIDI_CONFIG_COMMAND_SAVE);
   }
+
+  factoryReset() {
+    this.writeCommand(0, CONSTANTS.MIDI_CONFIG_COMMAND_CC, CONSTANTS.MIDI_CONFIG_COMMAND_FACTORY_RESET);
+  }
 }
