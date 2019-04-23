@@ -78,7 +78,7 @@ export const CONSTANTS = {
       sensitivity: 30,
       threshold: 10,
       refDrumStrength: 12,
-      refDrumWindow: 40,
+      refDrumWindow: 12,
       zones: [{
         midiNote: 44,
         midiTwistNote: 0,
@@ -137,7 +137,7 @@ export const CONSTANTS = {
       sensitivity: 10,
       threshold: 10,
       refDrumStrength: 12,
-      refDrumWindow: 40,
+      refDrumWindow: 12,
       zones: [{
         midiNote: 42,
         midiTwistNote: 46,
@@ -196,7 +196,7 @@ export const CONSTANTS = {
       sensitivity: 10,
       threshold: 10,
       refDrumStrength: 12,
-      refDrumWindow: 40,
+      refDrumWindow: 12,
       zones: [{
         midiNote: 42,
         midiTwistNote: 46,
