@@ -5,7 +5,6 @@ import SensorsList from './components/SensorsList';
 import SettingsBoard from './components/SettingsBoard';
 import PresetsList from './components/PresetsList';
 import theme from './theme';
-import logoSrc from './resources/images/freedrum-logo.png';
 
 const styles = {
   root: {
@@ -120,11 +119,6 @@ class Root extends Component {
     return (
       <div style={styles.root}>
         <div style={styles.header}>
-          <img
-            src={logoSrc}
-            alt={''}
-            style={styles.headerLogo}
-          />
           <div style={styles.headerTitle}>{'Configuration Tool'}</div>
           <div style={styles.headerSpacer} />
         </div>
